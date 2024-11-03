@@ -4,9 +4,9 @@ namespace Movies.Application.Database;
 
 public class DbInitializer(IDbConnectionFactory connection)
 {
-    private readonly IDbConnectionFactory _connection = connection;
+  private readonly IDbConnectionFactory _connection = connection;
 
-    public async Task InitializeAsync()
+  public async Task InitializeAsync()
     {
         using var cnx = await _connection.CreateConnectionAsync();
         await cnx.ExecuteAsync($"""

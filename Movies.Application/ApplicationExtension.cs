@@ -10,7 +10,7 @@ namespace Movies.Application;
 
 public static class ApplicationExtension
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+  public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<IMovieRepository, MovieRepository>();
         services.AddSingleton<IMovieService, MovieService>();
@@ -18,7 +18,7 @@ public static class ApplicationExtension
         return services;
     }
 
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
+  public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
     {
         var connectionString = config.GetConnectionString("NpgsqlConnection");
         if (string.IsNullOrEmpty(connectionString))
