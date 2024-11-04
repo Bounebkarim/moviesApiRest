@@ -105,11 +105,12 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
     {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(cancellationToken);
 
-        var sql = @"""
+        var sql = """
         SELECT m.*, g.name AS GenreName
         FROM movies m
         LEFT JOIN genres g ON m.id = g.movieId
-        WHERE m.slug = @Slug """;
+        WHERE m.slug = @Slug 
+""";
 
         var movieDictionary = new Dictionary<Guid, Movie>();
 
@@ -140,10 +141,11 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
     {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(cancellationToken);
 
-        var sql = @"""
+        var sql = """
         SELECT m.*, g.name AS GenreName
         FROM movies m
-        LEFT JOIN genres g ON m.id = g.movieId """;
+        LEFT JOIN genres g ON m.id = g.movieId 
+""";
 
         var movieDictionary = new Dictionary<Guid, Movie>();
 
@@ -202,7 +204,7 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
                 foreach (var genre in genresToRemove)
                 {
                     await connection.ExecuteAsync(new CommandDefinition(
-                        @"""
+                        """
                                     DELETE FROM genres 
                                     WHERE movieId = @MovieId AND name = @Name
                                     """,
