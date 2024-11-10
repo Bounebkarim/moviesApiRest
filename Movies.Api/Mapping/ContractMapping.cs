@@ -6,7 +6,7 @@ namespace Movies.Api.Mapping;
 
 public static class ContractMapping
 {
-    public static Movie MapToMovie(this CreateMovieRequest createMovieRequest)
+  public static Movie MapToMovie(this CreateMovieRequest createMovieRequest)
     {
         return new Movie()
         {
@@ -17,7 +17,7 @@ public static class ContractMapping
         };
     }
 
-    public static Movie MapToMovie(this UpdateMovieRequest updateMovieRequest,Guid movieId)
+  public static Movie MapToMovie(this UpdateMovieRequest updateMovieRequest,Guid movieId)
     {
         return new Movie()
         {
@@ -28,7 +28,7 @@ public static class ContractMapping
         };
     }
 
-    public static MovieResponse MapToMovieResponse(this Movie movie)
+  public static MovieResponse MapToMovieResponse(this Movie movie)
     {
         return new MovieResponse()
         {
@@ -36,14 +36,27 @@ public static class ContractMapping
             Title = movie.Title,
             Slug = movie.Slug,
             YearOfRelease = movie.YearOfRelease,
+            Rating = movie.GeneralRating,
+            UserRating = movie.Rating,
             Genres = movie.Genres.ToList()
 
         };
     }
 
-    public static List<MovieResponse> MapToMovieResponse(this IEnumerable<Movie> movies)
+  public static List<MovieResponse> MapToMovieResponse(this IEnumerable<Movie> movies)
     {
         var listOfResponses = movies.Select(MapToMovieResponse).ToList();
         return listOfResponses;
+    }
+
+  public static MovieRatingResponse MapToMovieRatingResponse(this MovieRating movie)
+    {
+      return new MovieRatingResponse() { MovieId = movie.MovieId, MovieSlug = movie.MovieSlug, Rating = movie.Rating };
+    }
+
+  public static List<MovieRatingResponse> MapToMovieRatingResponse(this IEnumerable<MovieRating> movieRatings)
+    {
+      var listOfResponce = movieRatings.Select(MapToMovieRatingResponse).ToList();
+      return listOfResponce;
     }
 }

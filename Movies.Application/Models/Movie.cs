@@ -9,6 +9,8 @@ public partial class Movie
   public required int  YearOfRelease { get; init; }
   public string Slug => GenerateSlug();
   public required List<string> Genres { get; init; } = new();
+  public float? GeneralRating { get; set; }
+  public int? Rating { get; set; }
 
   private string GenerateSlug()
     {
