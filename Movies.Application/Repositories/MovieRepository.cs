@@ -154,7 +154,7 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
     return movieDictionary.Values.FirstOrDefault();
   }
 
-  public async Task<IEnumerable<Movie>> GetAllAsync(Guid? userId, CancellationToken cancellationToken)
+  public async Task<IEnumerable<Movie>> GetAllAsync(GetAllMoviesOptions options, CancellationToken cancellationToken)
   {
     using var connection = await _dbConnectionFactory.CreateConnectionAsync(cancellationToken);
 
@@ -168,11 +168,13 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
                           FROM ratings
                           GROUP BY movieId
                       ) gr ON m.id = gr.movieId
+                      WHERE (@Title is null or m.title like ('%' || @Title || '%'))
+                      AND (@YearOfRelease is null or m.yearofrelease = @YearOfRelease)
               """;
 
     var movieDictionary = new Dictionary<Guid, Movie>();
 
-    using var reader = await connection.ExecuteReaderAsync(sql, new {userId});
+    using var reader = await connection.ExecuteReaderAsync(sql, new {options.UserId , options.Title , options.YearOfRelease});
 
     var movieParser = reader.GetRowParser<Movie>();
     while (reader.Read())
