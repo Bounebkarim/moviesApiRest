@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Runtime.Intrinsics.X86;
+using Dapper;
 using Movies.Application.Database;
 using Movies.Application.Models;
 
@@ -158,45 +159,50 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
   {
     using var connection = await _dbConnectionFactory.CreateConnectionAsync(cancellationToken);
 
-    var sql = """
-                      SELECT m.*,gr.GeneralRating,ur.rating as Rating, g.name AS GenreName
-                      FROM movies m
-                      LEFT JOIN genres g ON m.id = g.movieId 
-                      LEFT JOIN ratings ur ON m.id = ur.movieId AND ur.UserId = @UserId
-                      LEFT JOIN (
-                          SELECT movieId, AVG(rating) AS GeneralRating
-                          FROM ratings
-                          GROUP BY movieId
-                      ) gr ON m.id = gr.movieId
-                      WHERE (@Title is null or m.title like ('%' || @Title || '%'))
-                      AND (@YearOfRelease is null or m.yearofrelease = @YearOfRelease)
-              """;
-
-    var movieDictionary = new Dictionary<Guid, Movie>();
-
-    using var reader = await connection.ExecuteReaderAsync(sql, new {options.UserId , options.Title , options.YearOfRelease});
-
-    var movieParser = reader.GetRowParser<Movie>();
-    while (reader.Read())
+    // Define the order clause if a sort field is provided
+    var orderClause = string.Empty;
+    if (options.SortField is not null)
     {
-      var movie = movieParser(reader);
-      var genreName = reader["GenreName"] as string;
-
-      if (!movieDictionary.TryGetValue(movie.Id, out var currentMovie))
-      {
-        currentMovie = movie;
-        movieDictionary.Add(currentMovie.Id, currentMovie);
-      }
-
-      if (!string.IsNullOrEmpty(genreName))
-      {
-        currentMovie.Genres.Add(genreName);
-      }
+      orderClause = $"""
+                         ORDER BY m.{options.SortField} {(options.SortOrder == SortOrder.Ascending ? "ASC" : "DESC")}
+                     """;
     }
-
-    return movieDictionary.Values;
+    var result = await connection.QueryAsync(new CommandDefinition(
+    $"""
+                   SELECT m.*, gr.GeneralRating, ur.rating AS Rating, STRING_AGG(g.name, ',') AS Genres
+                   FROM movies m
+                   LEFT JOIN genres g ON m.id = g.movieId 
+                   LEFT JOIN ratings ur ON m.id = ur.movieId AND ur.UserId = @UserId
+                   LEFT JOIN (
+                       SELECT movieId, AVG(rating) AS GeneralRating
+                       FROM ratings
+                       GROUP BY movieId
+                   ) gr ON m.id = gr.movieId
+                   WHERE (@Title IS NULL OR m.title LIKE ('%' || @Title || '%'))
+                   AND (@YearOfRelease IS NULL OR m.yearofrelease = @YearOfRelease)
+                   GROUP BY m.id, gr.GeneralRating, ur.rating
+                   {orderClause}
+                   LIMIT @PageSize OFFSET @Pageoffset;
+               """,
+      new
+      {
+        options.UserId,
+        options.Title,
+        options.YearOfRelease,
+        options.PageSize,
+        Pageoffset = (options.Page - 1) * options.PageSize
+      },cancellationToken:cancellationToken));
+    
+    return result.Select(x=>new Movie()
+    {
+      Id = x.id,
+      Title = x.title,
+      YearOfRelease = x.yearofrelease,
+      Rating = x.rating,
+      GeneralRating = x.generalRating,
+      Genres = Enumerable.ToList(x.genres.Split(','))
+    });
   }
-
 
   public async Task<bool> UpdateAsync(Movie movie, CancellationToken cancellationToken)
   {
@@ -324,5 +330,17 @@ public class MovieRepository(IDbConnectionFactory dbConnectionFactory) : IMovieR
        SELECT COUNT(1) FROM movies WHERE id = @Id
        """, new { Id = id }, cancellationToken: token));
     return exists;
+  }
+
+  public async Task<int> GetCountAsync(string? title, int? yearOfRelease, CancellationToken cancellationToken = default)
+  {
+    using var connection = await _dbConnectionFactory.CreateConnectionAsync(cancellationToken);
+    return await connection.QuerySingleAsync<int>(new CommandDefinition("""
+                                                                  SELECT COUNT(*) FROM movies 
+                                                                  WHERE 
+                                                                    @title is null OR title LIKE ('%' || @Title ||'%')
+                                                                    AND
+                                                                    @yearOfRelease is null OR yearofrelease = @YearOfRelease
+                                                                  """,new { title, yearOfRelease }, cancellationToken: cancellationToken));
   }
 }

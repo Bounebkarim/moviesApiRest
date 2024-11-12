@@ -34,7 +34,7 @@ builder.Services.AddAuthentication(x =>
 builder.Services.AddAuthorization(x =>
 {
   x.AddPolicy(AuthConstance.AdminUserPolicyName, policy => policy.RequireClaim(AuthConstance.AdminUserClaimName, "true"));
-  x.AddPolicy(AuthConstance.TrustedUserClaimName, policy => policy.RequireAssertion(c =>
+  x.AddPolicy(AuthConstance.TrustedUserPolicyName, policy => policy.RequireAssertion(c =>
     c.User.HasClaim(m=> m is {Type : AuthConstance.AdminUserClaimName,Value: "true"}) ||
     c.User.HasClaim(m=> m is {Type : AuthConstance.TrustedUserClaimName,Value: "true"})));
 });

@@ -11,7 +11,5 @@ public class MovieResponse
   public float? Rating { get; init; }
 }
 
-public class MoviesResponse
-{
-  public IEnumerable<MovieResponse> Movies { get; init; } = Enumerable.Empty<MovieResponse>();
-}
+public class MoviesResponse : PagedResponse<MovieResponse>
+{}
