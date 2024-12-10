@@ -42,8 +42,8 @@ public static class ContractMapping
     };
   }
 
-  public static MoviesResponse MapToMoviesResponse(this IEnumerable<Movie> movies, int requestPage,
-    int requestPageSize, int totalCount)
+  public static MoviesResponse MapToMoviesResponse(this IEnumerable<Movie> movies, int? requestPage,
+    int? requestPageSize, int totalCount)
   {
     var listOfResponses = movies.Select(MapToMovieResponse).ToList();
     return new MoviesResponse()
